@@ -1,0 +1,14 @@
+**/node_modules/
+**/dist/
+.env
+**/.env
+*.log
+.DS_Store
+oh-story/.agents/
+oh-story/.omc/
+oh-story/.claude/
+oh-story/demo/
+playwright-report/
+test-results/
+__pycache__/
+*.pyc
