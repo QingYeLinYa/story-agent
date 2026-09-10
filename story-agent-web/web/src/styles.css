@@ -127,8 +127,8 @@ body {
 }
 
 .main {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   height: 100%;
 }
@@ -207,8 +207,67 @@ body {
   color: var(--warn);
 }
 
+.banner.hitl {
+  background: #efe2c8;
+}
+
+.write-list {
+  margin: 0.5rem 0 0.65rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.write-preview {
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  margin-top: 0.2rem;
+}
+
+.sidebar-new {
+  width: 100%;
+}
+
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.65rem 1.5rem 0;
+}
+
+.pipe-chip {
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.pipe-chip.pending {
+  opacity: 0.55;
+}
+
+.pipe-chip.running {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  background: #f4e6d6;
+}
+
+.pipe-chip.done {
+  border-color: #7a8f5a;
+  color: #3f4d2c;
+  background: #e6ecd8;
+}
+
+.tool-live {
+  margin: 0.4rem 1.5rem 0;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
 .transcript {
   overflow: auto;
+  flex: 1;
   padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;

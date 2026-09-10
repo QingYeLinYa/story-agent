@@ -1,6 +1,23 @@
+export type ToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
 export type ChatMessage = {
-  role: "system" | "user" | "assistant";
-  content: string;
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+};
+
+export type OpenAITool = {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
 };
 
 export type DeepseekConfig = {
@@ -71,4 +88,88 @@ export async function* streamDeepseekChat(
       }
     }
   }
+}
+
+export async function completeDeepseekChat(
+  config: DeepseekConfig,
+  messages: ChatMessage[],
+  options?: {
+    tools?: OpenAITool[];
+    temperature?: number;
+    timeoutMs?: number;
+    json?: boolean;
+    maxTokens?: number;
+  }
+): Promise<{ content: string; toolCalls: ToolCall[] }> {
+  if (!config.apiKey) {
+    throw new Error(
+      "未配置 DEEPSEEK_API_KEY。请复制 .env.example 为 .env 并填入密钥。"
+    );
+  }
+
+  const url = `${config.baseUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages,
+    stream: false,
+    temperature: options?.temperature ?? 0.5,
+  };
+  if (options?.tools?.length) {
+    body.tools = options.tools;
+    body.tool_choice = "auto";
+  }
+  if (options?.json) {
+    body.response_format = { type: "json_object" };
+  }
+  if (options?.maxTokens) {
+    body.max_tokens = options.maxTokens;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () => controller.abort(),
+    options?.timeoutMs ?? 90_000
+  );
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error("DeepSeek 请求超时");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(
+      `DeepSeek API 错误 ${res.status}: ${errText.slice(0, 500)}`
+    );
+  }
+
+  const json = (await res.json()) as {
+    choices?: {
+      message?: {
+        content?: string | null;
+        tool_calls?: ToolCall[];
+      };
+    }[];
+  };
+
+  const message = json.choices?.[0]?.message;
+  return {
+    content: message?.content || "",
+    toolCalls: message?.tool_calls || [],
+  };
 }
